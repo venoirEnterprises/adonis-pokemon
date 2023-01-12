@@ -1,0 +1,22 @@
+{
+  "name": "adonis-pokemon",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/venoirEnterprises/adonis-pokemon.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/venoirEnterprises/adonis-pokemon/issues"
+  },
+  "homepage": "https://github.com/venoirEnterprises/adonis-pokemon#readme",
+  "dependencies": {
+    "@adonisjs/lucid": "^18.3.0",
+    "mysql2": "^3.0.0",
+    "reflect-metadata": "^0.1.13"
+  }
+}

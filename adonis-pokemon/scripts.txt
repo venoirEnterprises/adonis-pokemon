@@ -1,0 +1,6 @@
+#db
+    node ace migration:run 
+    node ace make:migration <name>
+
+#run
+    node ace serve --watch
