@@ -21,6 +21,12 @@
 import Route from '@ioc:Adonis/Core/Route'
 
 Route.group(() => {
-  Route.post("/create", "PokemonController.create");
-  Route.get("/get/:id", "PokemonController.get")
+
+  Route.post("register", "SecurityController.register");
+  Route.post("login", "SecurityController.login");
+
+  Route.group(() => {
+    Route.post("/create", "PokemonController.create");
+    Route.get("/get/:id", "PokemonController.get")
+  }).middleware("auth::api")
 }).prefix("rest")
