@@ -4,3 +4,6 @@
 
 #run
     node ace serve --watch
+
+#model
+    node ace make:model <name>
