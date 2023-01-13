@@ -51,7 +51,7 @@ const authConfig: AuthConfig = {
       tokenProvider: {
         driver: 'database',
         table: 'api_tokens',
-        foreignKey: 'user_id',
+        foreignKey: 'poke_trainer_id',
       },
 
       provider: {
@@ -86,7 +86,7 @@ const authConfig: AuthConfig = {
         | of the mentioned columns to find their user record.
         |
         */
-        uids: ['email'],
+        uids: ['name'],
 
         /*
         |--------------------------------------------------------------------------

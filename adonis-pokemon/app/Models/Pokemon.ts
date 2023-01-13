@@ -15,9 +15,12 @@ export default class Pokemon extends BaseModel {
   public officialName: string
 
   @column()
-  public pet_name: string
+  public petName: string
 
   @column()
   public type: string
+
+  @column()
+  public pokeTrainerId: number
 
 }

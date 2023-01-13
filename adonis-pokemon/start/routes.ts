@@ -26,7 +26,9 @@ Route.group(() => {
   Route.post("login", "SecurityController.login");
 
   Route.group(() => {
-    Route.post("/create", "PokemonController.create");
-    Route.get("/get/:id", "PokemonController.get")
-  }).middleware("auth::api")
+    Route.post("/add", "PokemonController.add");
+    Route.get("/get/:id", "PokemonController.getById")
+    Route.get("/getAll", "PokemonController.getAll")
+    Route.get("/search", "PokemonController.search")
+  }).middleware("auth")
 }).prefix("rest")

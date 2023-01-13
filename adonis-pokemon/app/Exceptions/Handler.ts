@@ -15,17 +15,28 @@
 
 import Logger from '@ioc:Adonis/Core/Logger'
 import HttpExceptionHandler from '@ioc:Adonis/Core/HttpExceptionHandler'
+import { HttpContextContract } from "@ioc:Adonis/Core/HttpContext";
 
 export default class ExceptionHandler extends HttpExceptionHandler {
 
-  protected disableStatusPagesInDevelopment = false
-
-  protected statusPage = {
-    '404': 'error/404-not-found',
-    '500': 'error/error-has-occurred'
-  }
-
   constructor() {
     super(Logger)
+  }
+
+  public async handle(error: any, ctx: HttpContextContract) {
+    /**
+     * Self handle the validation exception
+     */
+    if (error.code === 'E_UNAUTHORIZED_ACCESS') {
+      return ctx.response.status(401).send({"error":"You are not authorised to access this URL. Please Register or Login"});
+    }
+    if (error.code === 'E_ROUTE_NOT_FOUND') {
+      return ctx.response.status(404).send({"error":"URL and / or type of request is invalid. Please check and try again"});
+    }
+
+    /**
+     * Forward rest of the exceptions to the parent class
+     */
+    return super.handle(error, ctx)
   }
 }
