@@ -30,5 +30,7 @@ Route.group(() => {
     Route.get("/get/:id", "PokemonController.getById")
     Route.get("/getAll", "PokemonController.getAll")
     Route.get("/search", "PokemonController.search")
+    Route.get("/release/:id", "PokemonController.releaseById")
+    Route.put("rename/:id", "PokemonController.rename")
   }).middleware("auth")
 }).prefix("rest")

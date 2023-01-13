@@ -22,39 +22,17 @@ export default class PokemonController {
 
             const pokemon = new Pokemon();
             pokemon.officialName = officialName;
-            pokemon.petName = petName == null ? officialName : petName;
+            pokemon.petName = this.getDisplayName(petName, officialName);
             pokemon.type = type;
             pokemon.pokeTrainerId = user.id;
 
             if(pokemon.petName != officialName) {
-
-                const pokemonWithPetName = await Database.from("pokemon")
-                    .where((query) => { query.where("pet_name", petName)})
-                    .andWhere((query) => {  query.where("poke_trainer_id", user.id)})
-
-                if(pokemonWithPetName.length !== 0) {// only one pokemon per pet name per person
-                    return response.status(400).send({"error":"You already have a pokemon with that pet name"});
-                }
+                return await this.handleDuplicatePetName(petName, user.id, response);
             }
             
             await pokemon.save();
 
             return this.createFriendlyPokemonModelForDisplay(pokemon);
-        }
-    }
-
-    public async getById({response, params}: HttpContextContract)
-    {
-        try {
-            const pokemon = await Pokemon.find(params.id);
-            if(pokemon) {
-                return this.createFriendlyPokemonModelForDisplay(pokemon);
-            }
-            else {
-                this.handledNotFoundError(response, false);
-            }
-        } catch (error) {
-            this.handledNotFoundError(response, false);
         }
     }
 
@@ -94,14 +72,96 @@ export default class PokemonController {
             getAllPokemonForUserBySearchFilters
                 .where('pokeTrainerId', '=', user.id)
                 .orderBy("updated_at", "desc");
-            
-            // await Database.from("pokemon")
-            // .where((query) => { query.where("pet_name", 'like', '%'+name+'%')})
-            // .where((query) => { query.where("official_name", 'like', '%'+name+'%')})
-            // .where((query) => { query.where("type", type)})
 
-// return response.status(200).send(name != null)
             return this.convertQueryResultToFriendlyModelsForDisplay(await getAllPokemonForUserBySearchFilters, response);
+        }
+    }
+
+    public async releaseById({auth, response, params, request}: HttpContextContract) {
+        const pokemon = await this.findByIdAndRespond(auth, response, params);
+        const confirm = request.input("confirm");
+        if(pokemon) {
+        let message = this.getDisplayName(pokemon.petName, pokemon.officialName).concat(' [with id: ').concat(pokemon.id.toString()).concat('] ');
+            if(confirm == null || confirm != 'true') {
+                return response.status(200).send( message.concat('will be released only if you send the confirm param set to true.'));
+            } else if (confirm == 'true') {
+                pokemon.delete();
+                return response.status(200).send( message.concat('successfully released.'));
+            }
+        } else {
+            this.handledNotFoundError(response);
+        }
+    }
+
+    public async getById({auth, response, params}: HttpContextContract){
+        
+        const pokemon = await this.findByIdAndRespond(auth, response, params);
+        if(pokemon) {
+            return this.createFriendlyPokemonModelForDisplay(pokemon);
+        } else {
+            this.handledNotFoundError(response);
+        }
+        
+    }
+
+    public async rename({auth, response, params, request}: HttpContextContract) {
+        
+        const user = await auth.authenticate();
+        const pokemon = await this.findByIdAndRespond(auth, response, params);
+        
+        if(pokemon) {
+            const petName = request.input('newName');
+            const petName2ndOption = request.input('petName');
+            const officialName = request.input('officialName');
+            const type = request.input('type');
+        
+            if(petName == null && petName2ndOption == null) {
+                return response.status(400).send({"error": "A new name for ".concat(this.getDisplayName(pokemon.petName, pokemon.officialName)).concat(" needs to be provided")});
+            }
+            if(officialName != null || type != null) {
+                return response.status(400).send({"error":"You can only give ".concat(this.getDisplayName(pokemon.petName,pokemon.officialName)).concat(" a new name, not type or official name") });
+            }
+
+            if(petName != null || petName2ndOption != null) {
+                const newPetName = petName == null ? petName2ndOption : petName;
+                if(newPetName != pokemon.petName) {                    
+                    await this.handleDuplicatePetName(petName, user.id, response);
+                    pokemon.petName = newPetName;
+                    await pokemon.save();
+                    return this.createFriendlyPokemonModelForDisplay(pokemon);
+                }
+            }
+            return this.createFriendlyPokemonModelForDisplay(pokemon);
+        } else {
+            this.handledNotFoundError(response);
+        }
+        
+    }
+
+    private async findByIdAndRespond(auth, response, params) {
+        
+        const user = await auth.authenticate();
+
+        const pokemon = await Pokemon.query()
+            .where('pokeTrainerId', '=', user.id)
+            .where('Id', params.id)
+            .first();
+
+        if(pokemon) {
+            return pokemon;
+        }
+        else {
+            this.handledNotFoundError(response);
+        }
+    }
+
+    private async handleDuplicatePetName(petName, userId, response) {
+        const pokemonWithPetName = await Pokemon.query()
+            .where('pokeTrainerId', '=', userId)
+            .where("petName", "=", petName);
+
+        if(pokemonWithPetName.length !== 0) {// only one pokemon per pet name per person
+            return response.status(400).send({"error":"You already have a pokemon with that pet name"});
         }
     }
 
@@ -141,12 +201,11 @@ export default class PokemonController {
         return true;
     }
 
-    private handledNotFoundError(response, searching: boolean): void {
-        console.log("error");
-        let errorMessage = "Sorry, that Pokemon cannot not found.";
-        if(!searching) {
-            errorMessage = errorMessage.concat(" Try searching via search using the pet's name(s) or their type.");
-        }
-        response.status(404).send({"error":errorMessage});
+    private handledNotFoundError(response): void {
+        response.status(404).send({"error":"Sorry, that Pokemon cannot not found. Try searching via search using the pet's name(s) or their type."});
+    }
+
+    private getDisplayName(petName, officialName): string {
+        return petName == null ? officialName : petName;
     }
 }
